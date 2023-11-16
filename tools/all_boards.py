@@ -97,7 +97,7 @@ def normalize_boards() -> list:
     return normalized_boards
 
 
-def get_normalization(board: int, all_boards: dict) -> bool:
+def get_normalization(board: int, all_boards: dict) -> int:
     for _ in range(4):
         if board in all_boards.values():
             return board
@@ -141,11 +141,17 @@ def remove_impossible(boards: list[int]) -> list[int]:
     return b
 
 
+def count_filled_tiles(board: int) -> int:
+    n = bin(board).count('1')
+    return n
+
+
 def prune_all_map(all: dict) -> dict:
     new_all = {}
     for board, normalized in all.items():
         x_win = count_x_wins(board)
         o_win = count_o_wins(board)
+        tiles_filled = count_filled_tiles(board)
 
         if x_win > 0 and o_win > 0:
             continue
@@ -153,6 +159,8 @@ def prune_all_map(all: dict) -> dict:
             new_all[board] = 21
         elif o_win > 0:
             new_all[board] = 42
+        elif tiles_filled == 9:
+            new_all[board] = 92506
         else:
             new_all[board] = normalized
 
@@ -214,6 +222,54 @@ def find_transitions(all_boards: dict, normalized: list[int]) -> dict:
     return transitions
 
 
+def get_board_indices(transitions: dict) -> dict:
+    board_indices = {}
+    for i, board in enumerate(transitions.keys()):
+        board_indices[board] = i
+    return board_indices
+
+
+def listify_transitions(transitions: dict) -> dict:
+    board_indices = get_board_indices(transitions)
+    x_list = []
+    o_list = []
+    for a in transitions.values():
+        x_t = [board_indices[i] for i in a['x']]
+        o_t = [board_indices[i] for i in a['o']]
+
+        x_list.append(x_t)
+        o_list.append(o_t)
+
+    return {'x': x_list, 'o': o_list}
+
+
+def merge_redundant_states(transitions: dict) -> dict:
+    found_transitions = []
+    found_states = []
+    reduced_states = {}
+    result = {}
+
+    for board, transition in transitions.items():
+        x_t = set(transition['x'])
+        o_t = set(transition['o'])
+        new_t = {'x': x_t, 'o': o_t}
+        if board not in [21, 42, 92506] and new_t in found_transitions:
+            index = found_transitions.index(new_t)
+            reduced_states[board] = found_states[index]
+        else:
+            found_transitions.append(new_t)
+            found_states.append(board)
+            reduced_states[board] = board
+
+    for board, transition in transitions.items():
+        if board in found_states:
+            x_t = set([reduced_states[i] for i in transition['x']])
+            o_t = set([reduced_states[i] for i in transition['o']])
+            result[board] = {'x': list(x_t), 'o': list(o_t)}
+
+    return result
+
+
 def print_all_to_normalized():
     all = all_to_normalized()
     s = json.dumps(all, indent=2)
@@ -242,11 +298,60 @@ def print_normalized_transitions():
         f.write(s)
 
 
+def print_board_indices():
+    all = all_to_normalized()
+    all = prune_all_map(all)
+    normalized = list(set(all.values()))
+    transitions = find_transitions(all, normalized)
+    old = 0
+    while old != transitions:
+        old = transitions
+        transitions = merge_redundant_states(transitions)
+    indices = get_board_indices(transitions)
+    print(len(indices.keys()))
+    s = json.dumps(indices, indent=2)
+    with open("board_indices.json", "w") as f:
+        f.write(s)
+
+
+def print_listify_transitions():
+    all = all_to_normalized()
+    all = prune_all_map(all)
+    normalized = list(set(all.values()))
+    transitions = find_transitions(all, normalized)
+    old = 0
+    while old != transitions:
+        old = transitions
+        transitions = merge_redundant_states(transitions)
+    transitions = listify_transitions(transitions)
+    print(len(transitions['x']))
+    s = json.dumps(transitions, indent=2)
+    with open("listified_transitions.json", "w") as f:
+        f.write(s)
+
+
+def print_merged_transitions():
+    all = all_to_normalized()
+    all = prune_all_map(all)
+    normalized = list(set(all.values()))
+    transitions = find_transitions(all, normalized)
+    old = 0
+    while old != transitions:
+        print(len(transitions.keys()))
+        old = transitions
+        transitions = merge_redundant_states(transitions)
+    print(len(transitions.keys()))
+    s = json.dumps(transitions, indent=2)
+    with open("normalized_transitions_merged.json", "w") as f:
+        f.write(s)
+
+
 # print_all_to_normalized()
 # print_all_to_normalized_pruned()
-print_normalized_transitions()
-
-
+# print_normalized_transitions()
+# print_merged_transitions()
+print_listify_transitions()
+print_board_indices()
 
 
 
