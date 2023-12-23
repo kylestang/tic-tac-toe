@@ -15,3 +15,7 @@ Tile states in base 4:
  - 1: x
  - 2: o
  - 3: Drawn
+
+ ## New stuff
+
+ 1. Create mapping bewteen each board value and it's rotation
