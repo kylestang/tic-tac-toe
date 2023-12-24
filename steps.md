@@ -18,4 +18,35 @@ Tile states in base 4:
 
  ## New stuff
 
- 1. Create mapping bewteen each board value and it's rotation
+3 types of functions: helpers, creators, printers
+
+pruned values: x:21, o: 42, #: 92506
+indexed values: x:13, o: 26, #: 6628
+
+Current data flow: all -> pruned -> merged -> indexed
+
+Note: For now I'm pruning all the boards with draw tiles as well, but I can
+just modify the prune_all_boards() function if I want them back.
+The difference is 11098 without vs 52833 with
+
+### Ideas
+
+- Save all seen states for lookup
+- Start by writing minimax
+- Prune by looking at whether the big board _can_ be won
+  - Later prune further by checking whether small boards can be won to inform big board
+- Remember to add alpha/beta pruning
+- For transitions, still have list of possible future states, just include the next small board with each move
+- Is it better to store all variants of a board in the hashmap or calculate the variants each time?
+- How should I order the transitions?
+  - Should I put the winning boards first?
+  - Should they be ordered or randomized? Ordered could maybe take advantage of the cache but randomized could help avoid biases
+
+### Steps
+
+1. Merge all X wins, O wins, and filled draws into single value
+1. Create mapping between each board value and it's rotation
+2. Create mapping between each board and it's reflection
+4. Create mapping between board value and possible outcomes
+5. Merge equivalent states based on possible outcomes, keeping in mind the next move
+5. Relabel each _pruned_ board to it's index

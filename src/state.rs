@@ -5,7 +5,7 @@ enum Players {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-enum Boards {
+pub enum Boards {
     TopLeft,
     TopCentre,
     TopRight,
@@ -33,9 +33,9 @@ pub struct State {
     bottom_right: u32,
 }
 
-const X_WIN: u32 = 11;
-const O_WIN: u32 = 17;
-const DRAW: u32 = 605;
+const X_WIN: u32 = 13;
+const O_WIN: u32 = 26;
+const DRAW: u32 = 6628;
 
 impl State {
     #[inline]
@@ -82,7 +82,7 @@ impl State {
                 Boards::BottomLeft => Boards::TopLeft,
                 Boards::BottomCentre => Boards::CentreLeft,
                 Boards::BottomRight => Boards::BottomLeft,
-                Boards::All => Boards::All
+                Boards::All => Boards::All,
             },
             top_left: self.bottom_left,
             top_centre: self.centre_left,
@@ -92,7 +92,7 @@ impl State {
             centre_right: self.top_centre,
             bottom_left: self.bottom_right,
             bottom_centre: self.centre_right,
-            bottom_right: self.top_right
+            bottom_right: self.top_right,
         }
     }
 
@@ -110,7 +110,7 @@ impl State {
                 Boards::BottomLeft => Boards::TopLeft,
                 Boards::BottomCentre => Boards::TopCentre,
                 Boards::BottomRight => Boards::TopRight,
-                Boards::All => Boards::All
+                Boards::All => Boards::All,
             },
             top_left: self.bottom_left,
             top_centre: self.bottom_centre,
@@ -120,18 +120,21 @@ impl State {
             centre_right: self.centre_right,
             bottom_left: self.top_left,
             bottom_centre: self.top_centre,
-            bottom_right: self.top_right
+            bottom_right: self.top_right,
         }
     }
 
     pub fn equivalent_states(self) -> EquivalentStateIter {
-        EquivalentStateIter { current: self, position: 0 }
+        EquivalentStateIter {
+            current: self,
+            position: 0,
+        }
     }
 }
 
 pub struct EquivalentStateIter {
     current: State,
-    position: u8
+    position: u8,
 }
 
 impl Iterator for EquivalentStateIter {

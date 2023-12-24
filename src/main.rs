@@ -1,7 +1,7 @@
 use ahash::AHashMap;
 use state::State;
 
-mod constants;
+mod maps;
 mod state;
 
 fn main() {
