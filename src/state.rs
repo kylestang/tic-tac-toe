@@ -1,3 +1,6 @@
+use crate::maps::rotations::ROTATIONS;
+use crate::maps::reflections::REFLECTIONS;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Players {
     X,
@@ -22,20 +25,20 @@ pub enum Boards {
 pub struct State {
     turn: Players,
     next_board: Boards,
-    top_left: u32,
-    top_centre: u32,
-    top_right: u32,
-    centre_left: u32,
-    centre: u32,
-    centre_right: u32,
-    bottom_left: u32,
-    bottom_centre: u32,
-    bottom_right: u32,
+    top_left: usize,
+    top_centre: usize,
+    top_right: usize,
+    centre_left: usize,
+    centre: usize,
+    centre_right: usize,
+    bottom_left: usize,
+    bottom_centre: usize,
+    bottom_right: usize,
 }
 
-const X_WIN: u32 = 13;
-const O_WIN: u32 = 26;
-const DRAW: u32 = 6628;
+const X_WIN: usize = 13;
+const O_WIN: usize = 26;
+const DRAW: usize = 5663;
 
 impl State {
     #[inline]
@@ -84,15 +87,15 @@ impl State {
                 Boards::BottomRight => Boards::BottomLeft,
                 Boards::All => Boards::All,
             },
-            top_left: self.bottom_left,
-            top_centre: self.centre_left,
-            top_right: self.top_left,
-            centre_left: self.bottom_centre,
-            centre: self.centre,
-            centre_right: self.top_centre,
-            bottom_left: self.bottom_right,
-            bottom_centre: self.centre_right,
-            bottom_right: self.top_right,
+            top_left: ROTATIONS[self.bottom_left],
+            top_centre: ROTATIONS[self.centre_left],
+            top_right: ROTATIONS[self.top_left],
+            centre_left: ROTATIONS[self.bottom_centre],
+            centre: ROTATIONS[self.centre],
+            centre_right: ROTATIONS[self.top_centre],
+            bottom_left: ROTATIONS[self.bottom_right],
+            bottom_centre: ROTATIONS[self.centre_right],
+            bottom_right: ROTATIONS[self.top_right],
         }
     }
 
@@ -112,15 +115,15 @@ impl State {
                 Boards::BottomRight => Boards::TopRight,
                 Boards::All => Boards::All,
             },
-            top_left: self.bottom_left,
-            top_centre: self.bottom_centre,
-            top_right: self.bottom_right,
-            centre_left: self.centre_left,
-            centre: self.centre,
-            centre_right: self.centre_right,
-            bottom_left: self.top_left,
-            bottom_centre: self.top_centre,
-            bottom_right: self.top_right,
+            top_left: REFLECTIONS[self.bottom_left],
+            top_centre: REFLECTIONS[self.bottom_centre],
+            top_right: REFLECTIONS[self.bottom_right],
+            centre_left: REFLECTIONS[self.centre_left],
+            centre: REFLECTIONS[self.centre],
+            centre_right: REFLECTIONS[self.centre_right],
+            bottom_left: REFLECTIONS[self.top_left],
+            bottom_centre: REFLECTIONS[self.top_centre],
+            bottom_right: REFLECTIONS[self.top_right],
         }
     }
 

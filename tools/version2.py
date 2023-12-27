@@ -1,5 +1,11 @@
 import json
 
+# GLOBAL VARIABLES
+# So this doesn't take 3 hours
+# Use pypy
+global_merge_result = None
+
+
 # HELPER FUNCTIONS
 
 
@@ -89,38 +95,49 @@ def get_all_boards():
     return all_boards
 
 
-# Takes a transitions dict and a state map, and returns a new transitions
-# dict and state map with equivalent states merged
-def merge_states(original_transitions: dict, state_map: dict):
+# Takes 2 transitions dicts and a state map, and returns new transitions
+# dicts and state map with equivalent states merged
+# transition dict: {board: [(board, location)]}
+def merge_states(x_transitions: dict, o_transitions: dict, state_map: dict):
     all_to_merged = {}
     keys = []
     values = []
     new_map = {}
-    new_transitions = {}
+    new_x_transitions = {}
+    new_o_transitions = {}
 
-    for board, transitions in original_transitions.items():
+    assert x_transitions.keys() == o_transitions.keys()
+
+    for board in x_transitions.keys():
+        x_list = x_transitions[board]
+        o_list = o_transitions[board]
         if board in [21, 42, 92506]:
             new_map[board] = board
-        elif transitions in values:
-            index = values.index(transitions)
+        elif (x_list, o_list) in values:
+            index = values.index((x_list, o_list))
             new_map[board] = keys[index]
         else:
-            values.append(transitions)
+            values.append((x_list, o_list))
             keys.append(board)
             new_map[board] = board
 
-    for board, transitions in original_transitions.items():
+    for board in x_transitions.keys():
         if board in new_map.values():
-            new_list = []
-            for b, t in transitions:
-                new_list.append((new_map[b], t))
+            new_x_list = []
+            new_o_list = []
+            for b, t in x_transitions[board]:
+                new_x_list.append((new_map[b], t))
 
-            new_transitions[board] = new_list
+            for b, t in o_transitions[board]:
+                new_o_list.append((new_map[b], t))
+
+            new_x_transitions[board] = new_x_list
+            new_o_transitions[board] = new_o_list
 
     for start, end in state_map.items():
         all_to_merged[start] = new_map[end]
 
-    return new_transitions, all_to_merged
+    return new_x_transitions, new_o_transitions, all_to_merged
 
 
 # MAPPING FUNCTIONS
@@ -135,6 +152,7 @@ def merge_states(original_transitions: dict, state_map: dict):
 def map_all_to_pruned():
     all_boards = get_all_boards()
     pruned_boards = {}
+
     for board in all_boards:
         x_won = has_x_won(board)
         o_won = has_o_won(board)
@@ -170,13 +188,26 @@ def map_pruned_rotations():
     return rotations
 
 
+def map_merged_rotations():
+    _, _, all_to_merged = merge_pruned_transitions()
+    rotations = {}
+
+    for board in all_to_merged.values():
+        if board in [21, 42, 93506]:
+            rotations[board] = board
+        else:
+            rotations[board] = all_to_merged[rotate_board_90(board)]
+
+    return rotations
+
+
 # Returns a dict that maps _indexed_ boards to their rotation
 def map_indexed_rotations():
-    pruned = map_pruned_rotations()
-    index = map_pruned_to_indexed()
+    merged_rotations = map_merged_rotations()
+    index = map_merged_to_indexed()
 
     rotations = {}
-    for start, end in pruned.items():
+    for start, end in merged_rotations.items():
         rotations[index[start]] = index[end]
 
     return rotations
@@ -195,13 +226,26 @@ def map_pruned_reflections():
     return reflections
 
 
+def map_merged_reflections():
+    _, _, all_to_merged = merge_pruned_transitions()
+    reflections = {}
+
+    for board in all_to_merged.values():
+        if board in [21, 42, 93506]:
+            reflections[board] = board
+        else:
+            reflections[board] = all_to_merged[flip_horizontally(board)]
+
+    return reflections
+
+
 # Returns a dict that maps _indexed_ boards to their reflection
 def map_indexed_reflections():
-    pruned = map_pruned_reflections()
-    index = map_pruned_to_indexed()
+    merged_reflections = map_merged_reflections()
+    index = map_merged_to_indexed()
 
     reflections = {}
-    for start, end in pruned.items():
+    for start, end in merged_reflections.items():
         reflections[index[start]] = index[end]
 
     return reflections
@@ -229,14 +273,37 @@ def map_pruned_x_win():
     return can_x_win
 
 
+def map_merged_x_win():
+    o_wins = [
+            8322, 33288, 133152,    # vertical
+            42, 2688, 172032,       # horizontal
+            131586, 8736            # diagonal
+            ]
+
+    merged_boards = merge_pruned_transitions()[2].values()
+    can_x_win = {}
+
+    for board in merged_boards:
+        can_win = False
+        if board != 42:
+            for win in o_wins:
+                if board & win == 0:
+                    can_win = True
+                    break
+
+        can_x_win[board] = can_win
+
+    return can_x_win
+
+
 # Returns a dict that maps the _indexed_ boards to whether x can win on that board
 def map_indexed_x_win():
-    pruned = map_pruned_x_win()
-    index = map_pruned_to_indexed()
+    merged = map_merged_x_win()
+    index = map_merged_to_indexed()
 
     can_x_win = {}
 
-    for board, value in pruned.items():
+    for board, value in merged.items():
         can_x_win[index[board]] = value
 
     return can_x_win
@@ -264,14 +331,37 @@ def map_pruned_o_win():
     return can_o_win
 
 
+def map_merged_o_win():
+    x_wins = [
+            4161, 16644, 66576,     # vertical
+            21, 1344, 86016,        # horizontal
+            65793, 4368             # diagonal
+            ]
+
+    merged_boards = merge_pruned_transitions()[2].values()
+    can_o_win = {}
+
+    for board in merged_boards:
+        can_win = False
+        if board != 21:
+            for win in x_wins:
+                if board & win == 0:
+                    can_win = True
+                    break
+
+        can_o_win[board] = can_win
+
+    return can_o_win
+
+
 # Returns a dict that maps the _indexed_ boards to whether o can win on that board
 def map_indexed_o_win():
-    pruned = map_pruned_o_win()
-    index = map_pruned_to_indexed()
+    merged = map_merged_o_win()
+    index = map_merged_to_indexed()
 
     can_o_win = {}
 
-    for board, value in pruned.items():
+    for board, value in merged.items():
         can_o_win[index[board]] = value
 
     return can_o_win
@@ -298,33 +388,42 @@ def map_pruned_to_x_transitions():
 
 
 # Returns a transitions dict of _pruned_ states with equivalent states _merged_
-# Also returns an updated all_to_merged mapping. Return is (transitions, map)
+# Also returns an updated all_to_merged mapping. Return is
+# (x_transitions, o_transitions, map)
 # The resulting dataset is _merged_
-def merge_pruned_x_transitions():
-    original_transitions = map_pruned_to_x_transitions()
+def merge_pruned_transitions():
+    global global_merge_result
+
+    if global_merge_result is not None:
+        return global_merge_result
+
+    x_transitions = map_pruned_to_x_transitions()
+    o_transitions = map_pruned_to_o_transitions()
     current_map = map_all_to_pruned()
 
-    old_dict = {}
-    new_dict = original_transitions
-    print(f"len: {len(new_dict)}")
+    old_x, old_o = {}, {}
+    new_x, new_o = x_transitions, o_transitions
+    # print(f"len: {len(new_x)}")
 
-    while old_dict != new_dict:
-        old_dict = new_dict
-        new_dict, current_map = merge_states(new_dict, current_map)
-        print(f"len: {len(new_dict)}")
+    while (old_x, old_o) != (new_x, new_o):
+        old_x, old_o = new_x, new_o
+        new_x, new_o, current_map = merge_states(new_x, new_o, current_map)
+        # print(f"len: {len(new_x)}")
 
-    return new_dict, current_map
+    global_merge_result = (new_x, new_o, current_map)
+
+    return new_x, new_o, current_map
 
 
 # Returns a dict that maps _indexed_ boards to possible _indexed_ board
 # states for x, and which tile it was put in
 # The dict is {board: [(board, tile)]}
 def map_indexed_to_x_transitions():
-    pruned = map_pruned_to_x_transitions()
-    index = map_pruned_to_indexed()
+    merged = merge_pruned_transitions()[0]
+    index = map_merged_to_indexed()
     x_transitions = {}
 
-    for board, possibilities in pruned.items():
+    for board, possibilities in merged.items():
         new_p = [(index[b[0]], b[1]) for b in possibilities]
         new_b = index[board]
 
@@ -342,10 +441,11 @@ def map_pruned_to_o_transitions():
 
     for board in set(pruned_boards.values()):
         transition = []
-        for tile in range(0, 9):
-            if get_tile_value(board, tile) == 0:
-                new_board = pruned_boards[board | (0b10 << (2 * tile))]
-                transition.append((new_board, tile))
+        if board not in [21, 42, 92506]:
+            for tile in range(0, 9):
+                if get_tile_value(board, tile) == 0:
+                    new_board = pruned_boards[board | (0b10 << (2 * tile))]
+                    transition.append((new_board, tile))
 
         o_transitions[board] = transition
 
@@ -356,8 +456,8 @@ def map_pruned_to_o_transitions():
 # states for o, and which tile it was put in
 # The dict is {board: [(board, tile)]}
 def map_indexed_to_o_transitions():
-    pruned = map_pruned_to_o_transitions()
-    index = map_pruned_to_indexed()
+    pruned = merge_pruned_transitions()[1]
+    index = map_merged_to_indexed()
     o_transitions = {}
 
     for board, possibilities in pruned.items():
@@ -381,13 +481,23 @@ def map_pruned_to_indexed():
 
 # Maps _all_ boards to the _indexed_ boards
 def map_all_to_indexed():
-    pruned_boards = map_all_to_pruned()
+    all_to_merged = merge_pruned_transitions()[2]
     indexed = {}
 
-    pruned_to_indexed = map_pruned_to_indexed()
+    merged_to_indexed = map_merged_to_indexed()
 
-    for all_board, pruned_board in pruned_boards.items():
-        indexed[all_board] = pruned_to_indexed[pruned_board]
+    for start, end in all_to_merged.items():
+        indexed[start] = merged_to_indexed[end]
+
+    return indexed
+
+
+def map_merged_to_indexed():
+    all_to_merged = merge_pruned_transitions()[2]
+    merged_boards = set(all_to_merged.values())
+    indexed = {}
+    for i, board in enumerate(sorted(list(merged_boards))):
+        indexed[board] = i
 
     return indexed
 
@@ -452,13 +562,23 @@ def print_pruned_to_o_transitions():
 
 # Prints a mapping from _all_ boards to _merged_ boards, and whether x can
 # win on them
-def print_merged_x_transitions():
-    transitions, boards = merge_pruned_x_transitions()
+def print_merged_transitions():
+    x_transitions, o_transitions, boards = merge_pruned_transitions()
     output = json.dumps(boards, indent=2)
     with open("all_to_merged.json", "w") as f:
         f.write(output)
-    output = json.dumps(transitions, indent=2)
+    output = json.dumps(x_transitions, indent=2)
     with open("merged_to_x_transitions.json", "w") as f:
+        f.write(output)
+    output = json.dumps(o_transitions, indent=2)
+    with open("merged_to_o_transitions.json", "w") as f:
+        f.write(output)
+
+
+def print_merged_to_indexed():
+    boards = map_merged_to_indexed()
+    output = json.dumps(boards, indent=2)
+    with open("merged_to_indexed.json", "w") as f:
         f.write(output)
 
 
@@ -497,6 +617,7 @@ def print_indexed_to_x_win():
 # Prints a mapping from _indexed_ boards to whether the board can be won by o
 def print_indexed_to_o_win():
     boards = map_indexed_o_win()
+    print(len(boards))
     output = json.dumps(boards, indent=2)
     with open("indexed_to_o_win.json", "w") as f:
         f.write(output)
@@ -576,13 +697,13 @@ def print_rust_o_transitions():
         f.write(output)
 
 
-print_all_to_pruned()
-print_pruned_rotations()
-print_pruned_reflections()
-print_pruned_to_x_wins()
-print_pruned_to_o_wins()
-print_pruned_to_x_transitions()
-print_pruned_to_o_transitions()
+# print_all_to_pruned()
+# print_pruned_rotations()
+# print_pruned_reflections()
+# print_pruned_to_x_wins()
+# print_pruned_to_o_wins()
+# print_pruned_to_x_transitions()
+# print_pruned_to_o_transitions()
 print_all_to_indexed()
 print_indexed_to_rotations()
 print_indexed_to_reflections()
@@ -592,4 +713,5 @@ print_indexed_to_x_transitions()
 print_indexed_to_o_transitions()
 print_rust_x_transitions()
 print_rust_o_transitions()
-print_merged_x_transitions()
+print_merged_transitions()
+print_merged_to_indexed()

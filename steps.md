@@ -20,8 +20,8 @@ Tile states in base 4:
 
 3 types of functions: helpers, creators, printers
 
-pruned values: x:21, o: 42, #: 92506
-indexed values: x:13, o: 26, #: 6628
+pruned, merged values: x:21, o: 42, #: 92506
+indexed values: x:13, o: 26, #: 5663
 
 Current data flow: all -> pruned -> merged -> indexed
 
