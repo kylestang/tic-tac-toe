@@ -1,8 +1,10 @@
-use crate::maps::rotations::ROTATIONS;
+use crate::maps::o_transitions::O_TRANSITIONS;
 use crate::maps::reflections::REFLECTIONS;
+use crate::maps::rotations::ROTATIONS;
+use crate::maps::x_transitions::X_TRANSITIONS;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum Players {
+pub enum Players {
     X,
     O,
 }
@@ -18,29 +20,67 @@ pub enum Boards {
     BottomLeft,
     BottomCentre,
     BottomRight,
-    All,
 }
+
+pub type BoardType = usize;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct State {
     turn: Players,
     next_board: Boards,
-    top_left: usize,
-    top_centre: usize,
-    top_right: usize,
-    centre_left: usize,
-    centre: usize,
-    centre_right: usize,
-    bottom_left: usize,
-    bottom_centre: usize,
-    bottom_right: usize,
+    top_left: BoardType,
+    top_centre: BoardType,
+    top_right: BoardType,
+    centre_left: BoardType,
+    centre: BoardType,
+    centre_right: BoardType,
+    bottom_left: BoardType,
+    bottom_centre: BoardType,
+    bottom_right: BoardType,
 }
 
-const X_WIN: usize = 13;
-const O_WIN: usize = 26;
-const DRAW: usize = 5663;
+const X_WIN: BoardType = 13;
+const O_WIN: BoardType = 26;
+const DRAW: BoardType = 5663;
 
 impl State {
+    #[inline]
+    pub fn turn(self) -> Players {
+        self.turn
+    }
+
+    #[inline]
+    pub fn get_board(self, board: Boards) -> BoardType {
+        match board {
+            Boards::TopLeft => self.top_left,
+            Boards::TopCentre => self.top_centre,
+            Boards::TopRight => self.top_right,
+            Boards::CentreLeft => self.centre_left,
+            Boards::Centre => self.centre,
+            Boards::CentreRight => self.centre_right,
+            Boards::BottomLeft => self.bottom_left,
+            Boards::BottomCentre => self.bottom_centre,
+            Boards::BottomRight => self.bottom_right,
+        }
+    }
+
+    #[inline]
+    pub fn set_board(mut self, board: Boards, value: BoardType) -> State {
+        match board {
+            Boards::TopLeft => self.top_left = value,
+            Boards::TopCentre => self.top_centre = value,
+            Boards::TopRight => self.top_right = value,
+            Boards::CentreLeft => self.centre_left = value,
+            Boards::Centre => self.centre = value,
+            Boards::CentreRight => self.centre_right = value,
+            Boards::BottomLeft => self.bottom_left = value,
+            Boards::BottomCentre => self.bottom_centre = value,
+            Boards::BottomRight => self.bottom_right = value,
+        }
+
+        return self;
+    }
+
     #[inline]
     pub fn x_win(self) -> bool {
         // Horizontal
@@ -85,7 +125,6 @@ impl State {
                 Boards::BottomLeft => Boards::TopLeft,
                 Boards::BottomCentre => Boards::CentreLeft,
                 Boards::BottomRight => Boards::BottomLeft,
-                Boards::All => Boards::All,
             },
             top_left: ROTATIONS[self.bottom_left],
             top_centre: ROTATIONS[self.centre_left],
@@ -113,7 +152,6 @@ impl State {
                 Boards::BottomLeft => Boards::TopLeft,
                 Boards::BottomCentre => Boards::TopCentre,
                 Boards::BottomRight => Boards::TopRight,
-                Boards::All => Boards::All,
             },
             top_left: REFLECTIONS[self.bottom_left],
             top_centre: REFLECTIONS[self.bottom_centre],
@@ -133,6 +171,20 @@ impl State {
             position: 0,
         }
     }
+
+    pub fn future_states(self) -> FutureStateIter {
+        let current_value = self.get_board(self.next_board);
+
+        // Check if we can go to all boards
+        let all = current_value == X_WIN || current_value == O_WIN || current_value == DRAW;
+
+        FutureStateIter {
+            current_state: self,
+            position: 0,
+            board: self.next_board,
+            all,
+        }
+    }
 }
 
 pub struct EquivalentStateIter {
@@ -146,15 +198,52 @@ impl Iterator for EquivalentStateIter {
     fn next(&mut self) -> Option<Self::Item> {
         if self.position >= 8 {
             return None;
-        } else if self.position == 0 {
-            return Some(self.current);
         } else if self.position == 4 {
             self.current = self.current.flip();
-        } else {
+        } else if self.position != 0 {
             self.current = self.current.rotate();
         }
 
         self.position += 1;
         Some(self.current)
+    }
+}
+
+pub struct FutureStateIter {
+    current_state: State,
+    position: usize,
+    board: Boards,
+    all: bool,
+}
+
+impl Iterator for FutureStateIter {
+    type Item = State;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.all {}
+
+        let board_value = self.current_state.get_board(self.current_state.next_board);
+
+        let possibilities = match self.current_state.turn {
+            Players::X => X_TRANSITIONS[board_value],
+            Players::O => O_TRANSITIONS[board_value],
+        };
+
+        if self.position >= possibilities.len() {
+            return None;
+        }
+
+        let (next_value, next_board) = possibilities[self.position];
+
+        let mut next_state = self.current_state.clone();
+        next_state.turn = match next_state.turn {
+            Players::X => Players::O,
+            Players::O => Players::X,
+        };
+        next_state = next_state.set_board(self.current_state.next_board, next_value);
+        next_state.next_board = next_board;
+
+        self.position += 1;
+        Some(next_state)
     }
 }

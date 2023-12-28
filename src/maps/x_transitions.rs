@@ -1,6 +1,6 @@
-use crate::state::{Boards, Boards::*};
+use crate::state::{BoardType, Boards, Boards::*};
 
-pub const X_TRANSITIONS: [&[(usize, Boards)]; 8629] = [
+pub const X_TRANSITIONS: [&[(BoardType, Boards)]; 8629] = [
     &[
         (1, TopLeft),
         (3, TopCentre),
