@@ -1,7 +1,11 @@
+use std::ops::{Index, IndexMut};
+
 use crate::maps::o_transitions::O_TRANSITIONS;
+use crate::maps::o_wins::O_WINS;
 use crate::maps::reflections::REFLECTIONS;
 use crate::maps::rotations::ROTATIONS;
 use crate::maps::x_transitions::X_TRANSITIONS;
+use crate::maps::x_wins::X_WINS;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Players {
@@ -44,41 +48,37 @@ const O_WIN: BoardType = 26;
 const DRAW: BoardType = 5663;
 
 impl State {
+    pub fn new(
+        turn: Players,
+        next_board: Boards,
+        top_left: BoardType,
+        top_centre: BoardType,
+        top_right: BoardType,
+        centre_left: BoardType,
+        centre: BoardType,
+        centre_right: BoardType,
+        bottom_left: BoardType,
+        bottom_centre: BoardType,
+        bottom_right: BoardType,
+    ) -> State {
+        State {
+            turn,
+            next_board,
+            top_left,
+            top_centre,
+            top_right,
+            centre_left,
+            centre,
+            centre_right,
+            bottom_left,
+            bottom_centre,
+            bottom_right,
+        }
+    }
+
     #[inline]
     pub fn turn(self) -> Players {
         self.turn
-    }
-
-    #[inline]
-    pub fn get_board(self, board: Boards) -> BoardType {
-        match board {
-            Boards::TopLeft => self.top_left,
-            Boards::TopCentre => self.top_centre,
-            Boards::TopRight => self.top_right,
-            Boards::CentreLeft => self.centre_left,
-            Boards::Centre => self.centre,
-            Boards::CentreRight => self.centre_right,
-            Boards::BottomLeft => self.bottom_left,
-            Boards::BottomCentre => self.bottom_centre,
-            Boards::BottomRight => self.bottom_right,
-        }
-    }
-
-    #[inline]
-    pub fn set_board(mut self, board: Boards, value: BoardType) -> State {
-        match board {
-            Boards::TopLeft => self.top_left = value,
-            Boards::TopCentre => self.top_centre = value,
-            Boards::TopRight => self.top_right = value,
-            Boards::CentreLeft => self.centre_left = value,
-            Boards::Centre => self.centre = value,
-            Boards::CentreRight => self.centre_right = value,
-            Boards::BottomLeft => self.bottom_left = value,
-            Boards::BottomCentre => self.bottom_centre = value,
-            Boards::BottomRight => self.bottom_right = value,
-        }
-
-        return self;
     }
 
     #[inline]
@@ -97,6 +97,21 @@ impl State {
     }
 
     #[inline]
+    pub fn can_x_win(self) -> bool {
+        // Horizontal
+        (X_WINS[self.top_left] && X_WINS[self.top_centre] && X_WINS[self.top_right])
+            || (X_WINS[self.centre_left] && X_WINS[self.centre] && X_WINS[self.centre_right])
+            || (X_WINS[self.bottom_left] && X_WINS[self.bottom_centre] && X_WINS[self.bottom_right])
+            // Vertical
+            || (X_WINS[self.top_right] && X_WINS[self.centre_right] && X_WINS[self.bottom_right])
+            || (X_WINS[self.top_centre] && X_WINS[self.centre] && X_WINS[self.bottom_centre])
+            || (X_WINS[self.top_right] && X_WINS[self.centre_right] && X_WINS[self.bottom_right])
+            // Diagonals
+            || (X_WINS[self.top_left] && X_WINS[self.centre] && X_WINS[self.bottom_right])
+            || (X_WINS[self.top_right] && X_WINS[self.centre] && X_WINS[self.bottom_left])
+    }
+
+    #[inline]
     pub fn o_win(self) -> bool {
         // Horizontal
         (self.top_left == O_WIN && self.top_centre == O_WIN && self.top_right == O_WIN)
@@ -109,6 +124,21 @@ impl State {
             // Diagonals
             || (self.top_left == O_WIN && self.centre == O_WIN && self.bottom_right == O_WIN)
             || (self.top_right == O_WIN && self.centre == O_WIN && self.bottom_left == O_WIN)
+    }
+
+    #[inline]
+    pub fn can_o_win(self) -> bool {
+        // Horizontal
+        (O_WINS[self.top_left] && O_WINS[self.top_centre] && O_WINS[self.top_right])
+            || (O_WINS[self.centre_left] && O_WINS[self.centre] && O_WINS[self.centre_right])
+            || (O_WINS[self.bottom_left] && O_WINS[self.bottom_centre] && O_WINS[self.bottom_right])
+            // Vertical
+            || (O_WINS[self.top_right] && O_WINS[self.centre_right] && O_WINS[self.bottom_right])
+            || (O_WINS[self.top_centre] && O_WINS[self.centre] && O_WINS[self.bottom_centre])
+            || (O_WINS[self.top_right] && O_WINS[self.centre_right] && O_WINS[self.bottom_right])
+            // Diagonals
+            || (O_WINS[self.top_left] && O_WINS[self.centre] && O_WINS[self.bottom_right])
+            || (O_WINS[self.top_right] && O_WINS[self.centre] && O_WINS[self.bottom_left])
     }
 
     #[inline]
@@ -173,7 +203,7 @@ impl State {
     }
 
     pub fn future_states(self) -> FutureStateIter {
-        let current_value = self.get_board(self.next_board);
+        let current_value = self[self.next_board];
 
         // Check if we can go to all boards
         let all = current_value == X_WIN || current_value == O_WIN || current_value == DRAW;
@@ -181,8 +211,45 @@ impl State {
         FutureStateIter {
             current_state: self,
             position: 0,
-            board: self.next_board,
+            board: match all {
+                true => Boards::TopLeft,
+                false => self.next_board,
+            },
             all,
+        }
+    }
+}
+
+impl Index<Boards> for State {
+    type Output = BoardType;
+
+    fn index(&self, board: Boards) -> &Self::Output {
+        match board {
+            Boards::TopLeft => &self.top_left,
+            Boards::TopCentre => &self.top_centre,
+            Boards::TopRight => &self.top_right,
+            Boards::CentreLeft => &self.centre_left,
+            Boards::Centre => &self.centre,
+            Boards::CentreRight => &self.centre_right,
+            Boards::BottomLeft => &self.bottom_left,
+            Boards::BottomCentre => &self.bottom_centre,
+            Boards::BottomRight => &self.bottom_right,
+        }
+    }
+}
+
+impl IndexMut<Boards> for State {
+    fn index_mut(&mut self, board: Boards) -> &mut Self::Output {
+        match board {
+            Boards::TopLeft => &mut self.top_left,
+            Boards::TopCentre => &mut self.top_centre,
+            Boards::TopRight => &mut self.top_right,
+            Boards::CentreLeft => &mut self.centre_left,
+            Boards::Centre => &mut self.centre,
+            Boards::CentreRight => &mut self.centre_right,
+            Boards::BottomLeft => &mut self.bottom_left,
+            Boards::BottomCentre => &mut self.bottom_centre,
+            Boards::BottomRight => &mut self.bottom_right,
         }
     }
 }
@@ -220,27 +287,45 @@ impl Iterator for FutureStateIter {
     type Item = State;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.all {}
+        let mut board_value = self.current_state[self.board];
 
-        let board_value = self.current_state.get_board(self.current_state.next_board);
-
-        let possibilities = match self.current_state.turn {
+        let mut possibilities = match self.current_state.turn {
             Players::X => X_TRANSITIONS[board_value],
             Players::O => O_TRANSITIONS[board_value],
         };
 
-        if self.position >= possibilities.len() {
-            return None;
+        while self.position >= possibilities.len() {
+            if self.all && self.board != Boards::BottomRight {
+                self.board = match self.board {
+                    Boards::TopLeft => Boards::TopCentre,
+                    Boards::TopCentre => Boards::TopRight,
+                    Boards::TopRight => Boards::CentreLeft,
+                    Boards::CentreLeft => Boards::Centre,
+                    Boards::Centre => Boards::CentreRight,
+                    Boards::CentreRight => Boards::BottomLeft,
+                    Boards::BottomLeft => Boards::BottomCentre,
+                    Boards::BottomCentre => Boards::BottomRight,
+                    Boards::BottomRight => Boards::BottomRight,
+                };
+                self.position = 0;
+                board_value = self.current_state[self.board];
+                possibilities = match self.current_state.turn {
+                    Players::X => X_TRANSITIONS[board_value],
+                    Players::O => O_TRANSITIONS[board_value],
+                };
+            } else {
+                return None;
+            }
         }
 
         let (next_value, next_board) = possibilities[self.position];
 
-        let mut next_state = self.current_state.clone();
+        let mut next_state = self.current_state;
         next_state.turn = match next_state.turn {
             Players::X => Players::O,
             Players::O => Players::X,
         };
-        next_state = next_state.set_board(self.current_state.next_board, next_value);
+        next_state[self.current_state.next_board] = next_value;
         next_state.next_board = next_board;
 
         self.position += 1;

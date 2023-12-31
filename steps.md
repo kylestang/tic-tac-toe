@@ -42,6 +42,8 @@ The difference is 11098 without vs 52833 with
   - Should I put the winning boards first?
   - Should they be ordered or randomized? Ordered could maybe take advantage of the cache but randomized could help avoid biases
 - Should I store boards as a u16 rather than a usize? Benchmark
+- Add remaining length hints to iterators
+- In the p_win and can_p_win functions, should I store the variables first?
 
 ### Steps
 

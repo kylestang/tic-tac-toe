@@ -1,4 +1,4 @@
-pub const O_WINS: [bool; 8629] = [
+pub const X_WINS: [bool; 8629] = [
     true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
     true, true, true, true, true, true, true, true, true, true, false, true, true, true, true,
     true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
