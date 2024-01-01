@@ -5,11 +5,31 @@ mod maps;
 mod state;
 
 fn main() {
-    let result = start_minimax();
+    // let result = start_minimax();
+    let result = test_2();
     println!("{}", result);
 }
 
-fn start_minimax() -> i32 {
+fn test_2() -> i8 {
+    let mut found = AHashMap::new();
+    let state = State::new(
+        Players::X,
+        Boards::TopRight,
+        13,
+        450,
+        1568,
+        3638,
+        13,
+        288,
+        4360,
+        26,
+        154,
+        );
+
+    let result = minimax(state, &mut found);
+    result
+}
+fn start_minimax() -> i8 {
     let boards = [
         Boards::TopLeft,
         //        Boards::TopCentre,
@@ -33,7 +53,7 @@ fn start_minimax() -> i32 {
     best
 }
 
-fn minimax(state: State, found: &mut AHashMap<State, i32>) -> i32 {
+fn minimax(state: State, found: &mut AHashMap<State, i8>) -> i8 {
     // Check cache if we've seen this state
     let known_option = found.get(&state);
     if let Some(&result) = known_option {
@@ -98,7 +118,7 @@ fn minimax(state: State, found: &mut AHashMap<State, i32>) -> i32 {
     }
 }
 
-fn save_state(state: State, value: i32, found: &mut AHashMap<State, i32>) {
+fn save_state(state: State, value: i8, found: &mut AHashMap<State, i8>) {
     for equivalent_state in state.equivalent_states() {
         found.insert(equivalent_state, value);
         println!("Found: {}", found.len());

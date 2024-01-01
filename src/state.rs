@@ -26,7 +26,7 @@ pub enum Boards {
     BottomRight,
 }
 
-pub type BoardType = usize;
+pub type BoardType = u16;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct State {
@@ -99,16 +99,16 @@ impl State {
     #[inline]
     pub fn can_x_win(self) -> bool {
         // Horizontal
-        (X_WINS[self.top_left] && X_WINS[self.top_centre] && X_WINS[self.top_right])
-            || (X_WINS[self.centre_left] && X_WINS[self.centre] && X_WINS[self.centre_right])
-            || (X_WINS[self.bottom_left] && X_WINS[self.bottom_centre] && X_WINS[self.bottom_right])
+        (X_WINS[self.top_left as usize] && X_WINS[self.top_centre as usize] && X_WINS[self.top_right as usize])
+            || (X_WINS[self.centre_left as usize] && X_WINS[self.centre as usize] && X_WINS[self.centre_right as usize])
+            || (X_WINS[self.bottom_left as usize] && X_WINS[self.bottom_centre as usize] && X_WINS[self.bottom_right as usize])
             // Vertical
-            || (X_WINS[self.top_right] && X_WINS[self.centre_right] && X_WINS[self.bottom_right])
-            || (X_WINS[self.top_centre] && X_WINS[self.centre] && X_WINS[self.bottom_centre])
-            || (X_WINS[self.top_right] && X_WINS[self.centre_right] && X_WINS[self.bottom_right])
+            || (X_WINS[self.top_right as usize] && X_WINS[self.centre_right as usize] && X_WINS[self.bottom_right as usize])
+            || (X_WINS[self.top_centre as usize] && X_WINS[self.centre as usize] && X_WINS[self.bottom_centre as usize])
+            || (X_WINS[self.top_right as usize] && X_WINS[self.centre_right as usize] && X_WINS[self.bottom_right as usize])
             // Diagonals
-            || (X_WINS[self.top_left] && X_WINS[self.centre] && X_WINS[self.bottom_right])
-            || (X_WINS[self.top_right] && X_WINS[self.centre] && X_WINS[self.bottom_left])
+            || (X_WINS[self.top_left as usize] && X_WINS[self.centre as usize] && X_WINS[self.bottom_right as usize])
+            || (X_WINS[self.top_right as usize] && X_WINS[self.centre as usize] && X_WINS[self.bottom_left as usize])
     }
 
     #[inline]
@@ -129,16 +129,16 @@ impl State {
     #[inline]
     pub fn can_o_win(self) -> bool {
         // Horizontal
-        (O_WINS[self.top_left] && O_WINS[self.top_centre] && O_WINS[self.top_right])
-            || (O_WINS[self.centre_left] && O_WINS[self.centre] && O_WINS[self.centre_right])
-            || (O_WINS[self.bottom_left] && O_WINS[self.bottom_centre] && O_WINS[self.bottom_right])
+        (O_WINS[self.top_left as usize] && O_WINS[self.top_centre as usize] && O_WINS[self.top_right as usize])
+            || (O_WINS[self.centre_left as usize] && O_WINS[self.centre as usize] && O_WINS[self.centre_right as usize])
+            || (O_WINS[self.bottom_left as usize] && O_WINS[self.bottom_centre as usize] && O_WINS[self.bottom_right as usize])
             // Vertical
-            || (O_WINS[self.top_right] && O_WINS[self.centre_right] && O_WINS[self.bottom_right])
-            || (O_WINS[self.top_centre] && O_WINS[self.centre] && O_WINS[self.bottom_centre])
-            || (O_WINS[self.top_right] && O_WINS[self.centre_right] && O_WINS[self.bottom_right])
+            || (O_WINS[self.top_right as usize] && O_WINS[self.centre_right as usize] && O_WINS[self.bottom_right as usize])
+            || (O_WINS[self.top_centre as usize] && O_WINS[self.centre as usize] && O_WINS[self.bottom_centre as usize])
+            || (O_WINS[self.top_right as usize] && O_WINS[self.centre_right as usize] && O_WINS[self.bottom_right as usize])
             // Diagonals
-            || (O_WINS[self.top_left] && O_WINS[self.centre] && O_WINS[self.bottom_right])
-            || (O_WINS[self.top_right] && O_WINS[self.centre] && O_WINS[self.bottom_left])
+            || (O_WINS[self.top_left as usize] && O_WINS[self.centre as usize] && O_WINS[self.bottom_right as usize])
+            || (O_WINS[self.top_right as usize] && O_WINS[self.centre as usize] && O_WINS[self.bottom_left as usize])
     }
 
     #[inline]
@@ -156,15 +156,15 @@ impl State {
                 Boards::BottomCentre => Boards::CentreLeft,
                 Boards::BottomRight => Boards::BottomLeft,
             },
-            top_left: ROTATIONS[self.bottom_left],
-            top_centre: ROTATIONS[self.centre_left],
-            top_right: ROTATIONS[self.top_left],
-            centre_left: ROTATIONS[self.bottom_centre],
-            centre: ROTATIONS[self.centre],
-            centre_right: ROTATIONS[self.top_centre],
-            bottom_left: ROTATIONS[self.bottom_right],
-            bottom_centre: ROTATIONS[self.centre_right],
-            bottom_right: ROTATIONS[self.top_right],
+            top_left: ROTATIONS[self.bottom_left as usize],
+            top_centre: ROTATIONS[self.centre_left as usize],
+            top_right: ROTATIONS[self.top_left as usize],
+            centre_left: ROTATIONS[self.bottom_centre as usize],
+            centre: ROTATIONS[self.centre as usize],
+            centre_right: ROTATIONS[self.top_centre as usize],
+            bottom_left: ROTATIONS[self.bottom_right as usize],
+            bottom_centre: ROTATIONS[self.centre_right as usize],
+            bottom_right: ROTATIONS[self.top_right as usize],
         }
     }
 
@@ -183,15 +183,15 @@ impl State {
                 Boards::BottomCentre => Boards::TopCentre,
                 Boards::BottomRight => Boards::TopRight,
             },
-            top_left: REFLECTIONS[self.bottom_left],
-            top_centre: REFLECTIONS[self.bottom_centre],
-            top_right: REFLECTIONS[self.bottom_right],
-            centre_left: REFLECTIONS[self.centre_left],
-            centre: REFLECTIONS[self.centre],
-            centre_right: REFLECTIONS[self.centre_right],
-            bottom_left: REFLECTIONS[self.top_left],
-            bottom_centre: REFLECTIONS[self.top_centre],
-            bottom_right: REFLECTIONS[self.top_right],
+            top_left: REFLECTIONS[self.bottom_left as usize],
+            top_centre: REFLECTIONS[self.bottom_centre as usize],
+            top_right: REFLECTIONS[self.bottom_right as usize],
+            centre_left: REFLECTIONS[self.centre_left as usize],
+            centre: REFLECTIONS[self.centre as usize],
+            centre_right: REFLECTIONS[self.centre_right as usize],
+            bottom_left: REFLECTIONS[self.top_left as usize],
+            bottom_centre: REFLECTIONS[self.top_centre as usize],
+            bottom_right: REFLECTIONS[self.top_right as usize],
         }
     }
 
@@ -290,8 +290,8 @@ impl Iterator for FutureStateIter {
         let mut board_value = self.current_state[self.board];
 
         let mut possibilities = match self.current_state.turn {
-            Players::X => X_TRANSITIONS[board_value],
-            Players::O => O_TRANSITIONS[board_value],
+            Players::X => X_TRANSITIONS[board_value as usize],
+            Players::O => O_TRANSITIONS[board_value as usize],
         };
 
         while self.position >= possibilities.len() {
@@ -310,8 +310,8 @@ impl Iterator for FutureStateIter {
                 self.position = 0;
                 board_value = self.current_state[self.board];
                 possibilities = match self.current_state.turn {
-                    Players::X => X_TRANSITIONS[board_value],
-                    Players::O => O_TRANSITIONS[board_value],
+                    Players::X => X_TRANSITIONS[board_value as usize],
+                    Players::O => O_TRANSITIONS[board_value as usize],
                 };
             } else {
                 return None;
