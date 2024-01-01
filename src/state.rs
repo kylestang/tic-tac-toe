@@ -325,7 +325,7 @@ impl Iterator for FutureStateIter {
             Players::X => Players::O,
             Players::O => Players::X,
         };
-        next_state[self.current_state.next_board] = next_value;
+        next_state[self.board] = next_value;
         next_state.next_board = next_board;
 
         self.position += 1;

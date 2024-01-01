@@ -12,3 +12,5 @@ lto = "fat"
 [dependencies]
 ahash = "0.8.6"
 
+[dev-dependencies]
+rstest = "0.18.2"

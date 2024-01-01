@@ -12,14 +12,14 @@ fn main() {
 fn start_minimax() -> i32 {
     let boards = [
         Boards::TopLeft,
-        Boards::TopCentre,
-        Boards::TopRight,
-        Boards::CentreLeft,
-        Boards::Centre,
-        Boards::CentreRight,
-        Boards::BottomLeft,
-        Boards::BottomCentre,
-        Boards::BottomRight,
+        //        Boards::TopCentre,
+        //        Boards::TopRight,
+        //        Boards::CentreLeft,
+        //        Boards::Centre,
+        //        Boards::CentreRight,
+        //        Boards::BottomLeft,
+        //        Boards::BottomCentre,
+        //        Boards::BottomRight,
     ];
     let mut found = AHashMap::new();
     let mut best = -1;
@@ -40,12 +40,18 @@ fn minimax(state: State, found: &mut AHashMap<State, i32>) -> i32 {
         return result;
     }
 
+    let can_x_win = state.can_x_win();
+    let can_o_win = state.can_o_win();
+
+    if !can_x_win && !can_o_win {
+        save_state(state, 0, found);
+        return 0;
+    }
+
     match state.turn() {
         Players::X => {
             if state.o_win() {
-                for equivalent_state in state.equivalent_states() {
-                    found.insert(equivalent_state, -1);
-                }
+                save_state(state, -1, found);
                 return -1;
             }
 
@@ -53,19 +59,22 @@ fn minimax(state: State, found: &mut AHashMap<State, i32>) -> i32 {
             for future_state in state.future_states() {
                 let result = minimax(future_state, found);
                 if result == 1 {
+                    save_state(state, 1, found);
                     return 1;
+                } else if result == 0 && !can_x_win {
+                    save_state(state, 0, found);
+                    return 0;
                 }
                 if result > best {
                     best = result;
                 }
             }
+            save_state(state, best, found);
             best
         }
         Players::O => {
             if state.x_win() {
-                for equivalent_state in state.equivalent_states() {
-                    found.insert(equivalent_state, 1);
-                }
+                save_state(state, 1, found);
                 return 1;
             }
 
@@ -73,13 +82,72 @@ fn minimax(state: State, found: &mut AHashMap<State, i32>) -> i32 {
             for future_state in state.future_states() {
                 let result = minimax(future_state, found);
                 if result == -1 {
+                    save_state(state, -1, found);
                     return -1;
+                } else if result == 0 && !can_o_win {
+                    save_state(state, 0, found);
+                    return 0;
                 }
                 if result < best {
                     best = result;
                 }
             }
+            save_state(state, best, found);
             best
         }
+    }
+}
+
+fn save_state(state: State, value: i32, found: &mut AHashMap<State, i32>) {
+    for equivalent_state in state.equivalent_states() {
+        found.insert(equivalent_state, value);
+        println!("Found: {}", found.len());
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_minimax_1() {
+        let mut found = AHashMap::new();
+        let state = State::new(
+            Players::X,
+            Boards::BottomLeft,
+            13,
+            2949,
+            3637,
+            26,
+            13,
+            26,
+            13,
+            13,
+            26,
+        );
+
+        let result = minimax(state, &mut found);
+        assert_eq!(result, -1);
+    }
+
+    #[test]
+    fn test_minimax_2() {
+        let mut found = AHashMap::new();
+        let state = State::new(
+            Players::X,
+            Boards::TopRight,
+            13,
+            450,
+            1568,
+            3638,
+            13,
+            288,
+            4360,
+            26,
+            154,
+        );
+
+        let result = minimax(state, &mut found);
+        assert_eq!(result, -1);
     }
 }
