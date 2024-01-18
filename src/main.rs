@@ -1,8 +1,6 @@
 use ahash::AHashMap;
-use state::{Boards, Players, State};
-
-mod maps;
-mod state;
+use tictactoe::state::{Boards, Players, State};
+use tictactoe::minimax::minimax;
 
 fn main() {
     // let result = start_minimax();
@@ -14,160 +12,18 @@ fn test_2() -> i8 {
     let mut found = AHashMap::new();
     let state = State::new(
         Players::X,
-        Boards::TopRight,
+        Boards::Centre,
+        5061,
+        467,
         13,
-        450,
-        1568,
-        3638,
-        13,
-        288,
-        4360,
+        1141,
+        6879,
+        3381,
+        912,
         26,
-        154,
-        );
+        2556,
+    );
 
     let result = minimax(state, &mut found);
     result
-}
-fn start_minimax() -> i8 {
-    let boards = [
-        Boards::TopLeft,
-        //        Boards::TopCentre,
-        //        Boards::TopRight,
-        //        Boards::CentreLeft,
-        //        Boards::Centre,
-        //        Boards::CentreRight,
-        //        Boards::BottomLeft,
-        //        Boards::BottomCentre,
-        //        Boards::BottomRight,
-    ];
-    let mut found = AHashMap::new();
-    let mut best = -1;
-    for board in boards {
-        let state = State::new(Players::X, board, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        let result = minimax(state, &mut found);
-        if result > best {
-            best = result;
-        }
-    }
-    best
-}
-
-fn minimax(state: State, found: &mut AHashMap<State, i8>) -> i8 {
-    // Check cache if we've seen this state
-    let known_option = found.get(&state);
-    if let Some(&result) = known_option {
-        return result;
-    }
-
-    let can_x_win = state.can_x_win();
-    let can_o_win = state.can_o_win();
-
-    if !can_x_win && !can_o_win {
-        save_state(state, 0, found);
-        return 0;
-    }
-
-    match state.turn() {
-        Players::X => {
-            if state.o_win() {
-                save_state(state, -1, found);
-                return -1;
-            }
-
-            let mut best = -1;
-            for future_state in state.future_states() {
-                let result = minimax(future_state, found);
-                if result == 1 {
-                    save_state(state, 1, found);
-                    return 1;
-                } else if result == 0 && !can_x_win {
-                    save_state(state, 0, found);
-                    return 0;
-                }
-                if result > best {
-                    best = result;
-                }
-            }
-            save_state(state, best, found);
-            best
-        }
-        Players::O => {
-            if state.x_win() {
-                save_state(state, 1, found);
-                return 1;
-            }
-
-            let mut best = 1;
-            for future_state in state.future_states() {
-                let result = minimax(future_state, found);
-                if result == -1 {
-                    save_state(state, -1, found);
-                    return -1;
-                } else if result == 0 && !can_o_win {
-                    save_state(state, 0, found);
-                    return 0;
-                }
-                if result < best {
-                    best = result;
-                }
-            }
-            save_state(state, best, found);
-            best
-        }
-    }
-}
-
-fn save_state(state: State, value: i8, found: &mut AHashMap<State, i8>) {
-    for equivalent_state in state.equivalent_states() {
-        found.insert(equivalent_state, value);
-        println!("Found: {}", found.len());
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_minimax_1() {
-        let mut found = AHashMap::new();
-        let state = State::new(
-            Players::X,
-            Boards::BottomLeft,
-            13,
-            2949,
-            3637,
-            26,
-            13,
-            26,
-            13,
-            13,
-            26,
-        );
-
-        let result = minimax(state, &mut found);
-        assert_eq!(result, -1);
-    }
-
-    #[test]
-    fn test_minimax_2() {
-        let mut found = AHashMap::new();
-        let state = State::new(
-            Players::X,
-            Boards::TopRight,
-            13,
-            450,
-            1568,
-            3638,
-            13,
-            288,
-            4360,
-            26,
-            154,
-        );
-
-        let result = minimax(state, &mut found);
-        assert_eq!(result, -1);
-    }
 }
